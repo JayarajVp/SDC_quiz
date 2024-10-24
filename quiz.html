@@ -1,15 +1,13 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Application</title>
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "YOUR_API_KEY",
             authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -19,7 +17,6 @@
             appId: "YOUR_APP_ID"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -28,17 +25,17 @@
         let score = 0;
         let startTime;
 
-        // Fetch questions from Firestore
         async function fetchQuestions() {
             const querySnapshot = await getDocs(collection(db, "questions"));
             querySnapshot.forEach((doc) => {
                 questions.push({ id: doc.id, ...doc.data() });
             });
-            startQuiz();
         }
 
         function startQuiz() {
             startTime = Date.now();
+            document.getElementById("inputContainer").style.display = "none"; // Hide input fields
+            document.getElementById("quizContainer").style.display = "block"; // Show quiz container
             displayQuestion();
         }
 
@@ -74,7 +71,6 @@
             const section = document.getElementById("section").value;
             const year = document.getElementById("year").value;
 
-            // Save result to Firestore
             addDoc(collection(db, "results"), {
                 name: name,
                 section: section,
@@ -91,15 +87,21 @@
             }).catch(error => console.error("Error saving result: ", error));
         }
 
-        window.onload = fetchQuestions;
+        window.onload = async () => {
+            await fetchQuestions();
+            document.getElementById("startQuizButton").onclick = startQuiz; // Add event listener for the start button
+        };
     </script>
 </head>
 <body>
-    <div id="quizContainer">
+    <div id="inputContainer">
         <h1>Quiz Application</h1>
         <input type="text" id="name" placeholder="Enter your name" required>
         <input type="text" id="section" placeholder="Enter your section" required>
         <input type="text" id="year" placeholder="Enter your year" required>
+        <button id="startQuizButton">Start Quiz</button> <!-- Added Start Quiz button -->
+    </div>
+    <div id="quizContainer" style="display: none;">
         <div id="question"></div>
         <div id="options"></div>
     </div>
