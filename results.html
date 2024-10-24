@@ -4,6 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        #loading {
+            text-align: center;
+            font-size: 18px;
+            color: #555;
+        }
+    </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
@@ -21,20 +53,38 @@
         const db = getFirestore(app);
 
         async function fetchResults() {
-            const querySnapshot = await getDocs(collection(db, "results"));
             const resultsContainer = document.getElementById("results");
-            querySnapshot.forEach((doc) => {
-                const result = doc.data();
-                const resultRow = document.createElement("tr");
-                resultRow.innerHTML = `
-                    <td>${result.name}</td>
-                    <td>${result.section}</td>
-                    <td>${result.year}</td>
-                    <td>${result.score}</td>
-                    <td>${result.time} seconds</td>
-                `;
-                resultsContainer.appendChild(resultRow);
-            });
+            const loadingIndicator = document.getElementById("loading");
+            loadingIndicator.style.display = "block"; // Show loading message
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "results"));
+                const results = [];
+                querySnapshot.forEach((doc) => {
+                    const result = doc.data();
+                    results.push(result);
+                });
+
+                // Sort results by score (descending)
+                results.sort((a, b) => b.score - a.score);
+
+                results.forEach((result) => {
+                    const resultRow = document.createElement("tr");
+                    resultRow.innerHTML = `
+                        <td>${result.name}</td>
+                        <td>${result.section}</td>
+                        <td>${result.year}</td>
+                        <td>${result.score}</td>
+                        <td>${result.time} seconds</td>
+                    `;
+                    resultsContainer.appendChild(resultRow);
+                });
+            } catch (error) {
+                console.error("Error fetching results: ", error);
+                resultsContainer.innerHTML = "<tr><td colspan='5'>Error loading results.</td></tr>";
+            } finally {
+                loadingIndicator.style.display = "none"; // Hide loading message
+            }
         }
 
         window.onload = fetchResults;
@@ -42,7 +92,8 @@
 </head>
 <body>
     <h1>Quiz Results</h1>
-    <table border="1">
+    <div id="loading" style="display: none;">Loading results...</div>
+    <table>
         <thead>
             <tr>
                 <th>Name</th>
