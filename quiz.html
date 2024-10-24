@@ -4,6 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+        }
+        input {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            width: 300px;
+        }
+        button {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+        }
+    </style>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
@@ -26,10 +47,18 @@
         let startTime;
 
         async function fetchQuestions() {
-            const querySnapshot = await getDocs(collection(db, "questions"));
-            querySnapshot.forEach((doc) => {
-                questions.push({ id: doc.id, ...doc.data() });
-            });
+            console.log("Fetching questions...");
+            try {
+                const querySnapshot = await getDocs(collection(db, "questions"));
+                querySnapshot.forEach((doc) => {
+                    questions.push({ id: doc.id, ...doc.data() });
+                });
+                console.log(`Fetched ${questions.length} questions.`);
+                startQuiz();
+            } catch (error) {
+                console.error("Error fetching questions: ", error);
+                alert("Failed to load questions. Please try again later.");
+            }
         }
 
         function startQuiz() {
@@ -71,6 +100,7 @@
             const section = document.getElementById("section").value;
             const year = document.getElementById("year").value;
 
+            // Save result to Firestore
             addDoc(collection(db, "results"), {
                 name: name,
                 section: section,
@@ -84,13 +114,13 @@
                     <p>Score: ${score}</p>
                     <p>Time Taken: ${timeTaken} seconds</p>
                 `;
-            }).catch(error => console.error("Error saving result: ", error));
+            }).catch(error => {
+                console.error("Error saving result: ", error);
+                alert("Failed to save your result. Please try again.");
+            });
         }
 
-        window.onload = async () => {
-            await fetchQuestions();
-            document.getElementById("startQuizButton").onclick = startQuiz; // Add event listener for the start button
-        };
+        window.onload = fetchQuestions;
     </script>
 </head>
 <body>
@@ -99,7 +129,7 @@
         <input type="text" id="name" placeholder="Enter your name" required>
         <input type="text" id="section" placeholder="Enter your section" required>
         <input type="text" id="year" placeholder="Enter your year" required>
-        <button id="startQuizButton">Start Quiz</button> <!-- Added Start Quiz button -->
+        <button id="startQuizButton" onclick="startQuiz()">Start Quiz</button>
     </div>
     <div id="quizContainer" style="display: none;">
         <div id="question"></div>
